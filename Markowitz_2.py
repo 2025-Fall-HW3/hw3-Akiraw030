@@ -70,7 +70,36 @@ class MyPortfolio:
         """
         TODO: Complete Task 4 Below
         """
-        
+        eps = 1e-6
+
+        for i, t in enumerate(self.price.index):
+            end_loc = i
+            start_loc = i - (self.lookback - 1)
+
+            if start_loc < 0:
+                continue
+
+            window = self.returns.iloc[start_loc : end_loc + 1]  
+            window = window[assets]
+
+            mu = window.mean().values
+            Sigma = window.cov().values
+            
+            Sigma += np.eye(Sigma.shape[0]) * eps
+
+            try:
+                w_raw = np.linalg.solve(Sigma, mu)
+            except np.linalg.LinAlgError:
+                w_raw = np.linalg.pinv(Sigma).dot(mu)
+
+            w_clipped = np.maximum(w_raw, 0.0)
+
+            if w_clipped.sum() <= 0.0:
+                w = np.ones_like(w_clipped) / len(w_clipped)
+            else:
+                w = w_clipped / w_clipped.sum()
+
+            self.portfolio_weights.loc[t, assets] = w
         
         """
         TODO: Complete Task 4 Above
